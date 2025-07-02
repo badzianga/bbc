@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "lexer.h"
+#include "parser.h"
 #include "utils.h"
 
 int main(int argc, char** argv) {
@@ -14,7 +15,8 @@ int main(int argc, char** argv) {
 
     TokenArray token_array = lexer_lex(source);
 
-    lexer_print_output(token_array);
+    int result = parser_parse(&token_array);
+    printf("Result: %d\n", result);
 
     lexer_free_tokens(&token_array);
     free(source);
