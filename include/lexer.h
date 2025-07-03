@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 // TODO: add assignment operators
-typedef enum e_token_type {
+typedef enum TokenType {
     TOKEN_EOF,             // EOF
 
     TOKEN_LEFT_PAREN,      // (
@@ -54,14 +54,14 @@ typedef enum e_token_type {
     TOKEN_ERROR
 } TokenType;
 
-typedef struct s_token {
+typedef struct Token {
     TokenType type;
     const char* value;
     int line;
     int length;
 } Token;
 
-typedef struct s_token_array {
+typedef struct TokenArray {
     Token* tokens;
     int count;
     int capacity;

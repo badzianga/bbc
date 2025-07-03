@@ -6,7 +6,7 @@
 #include "lexer.h"
 #include "utils.h"
 
-typedef struct s_lexer {
+typedef struct Lexer {
     const char* start;
     const char* current;
     int line;
