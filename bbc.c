@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "interpreter.h"
 #include "lexer.h"
 #include "parser.h"
 #include "utils.h"
@@ -15,11 +16,16 @@ int main(int argc, char** argv) {
 
     // TODO: move token_array from main to parser
     TokenArray token_array = lexer_lex(source);
-    ASTNode* result = parser_parse(argv[1], &token_array);
+    ASTNode* ast = parser_parse(argv[1], &token_array);
+    Word result = interpreter_interpret(ast);
 
-    parser_print_output(result, 0);
+    lexer_print_output(token_array);
+    printf("----------------------------------------------------------------\n");
+    parser_print_output(ast, 0);
+    printf("----------------------------------------------------------------\n");
+    printf("Result: %ld\n", result);
 
-    parser_free_ast(result);
+    parser_free_ast(ast);
     lexer_free_tokens(&token_array);
     free(source);
     return 0;
