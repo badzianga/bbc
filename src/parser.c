@@ -6,6 +6,7 @@
 #include "parser.h"
 
 typedef struct s_parser {
+    const char* file_path;
     Token* tokens;
     Token* current;
     int count;
@@ -49,7 +50,7 @@ static ASTNode* parse_primary();
 static ASTNode* parse_line() {
     ASTNode* result = parse_expression();
     if (parser.current->type != TOKEN_SEMICOLON) {
-        fprintf(stderr, "error: expected ';' after expression\n");
+        fprintf(stderr, "%s:%d: error: expected ';' after expression\n", parser.file_path, parser.current->line);
         exit(1);
     }
     ++parser.current;
@@ -132,17 +133,24 @@ static ASTNode* parse_primary() {
         ++parser.current;
         ASTNode* inside = parse_expression();
         if (parser.current->type != TOKEN_RIGHT_PAREN) {
-            fprintf(stderr, "error: expected closing parenthesis\n");
+            fprintf(stderr, "%s:%d: error: expected closing parenthesis\n", parser.file_path, parser.current->line);
             exit(1);
         }
         ++parser.current;
         return inside;
     }
-    fprintf(stderr, "error: invalid token: %.*s", parser.current->length, parser.current->value);
+    fprintf(
+        stderr, "%s:%d: error: invalid token: %.*s\n",    
+        parser.file_path,
+        parser.current->line,    
+        parser.current->length,    
+        parser.current->value
+    );
     exit(1);
 }
 
-ASTNode* parser_parse(TokenArray* token_array) {
+ASTNode* parser_parse(const char* file_path, TokenArray* token_array) {
+    parser.file_path = file_path;
     parser.tokens = token_array->tokens;
     parser.count = token_array->count;
     parser.current = parser.tokens;
@@ -206,7 +214,7 @@ void parser_print_output(ASTNode* root, int indent) {
             printf("Literal: %ld\n", root->literal);
         } break;
         default: {
-            fprintf(stderr, "error: unknown AST node: %d\n", root->type);
+            fprintf(stderr, "%s:%d: error: unknown AST node: %d\n", parser.file_path, parser.current->line, root->type);
         } break;
     }
 }

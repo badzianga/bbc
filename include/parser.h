@@ -28,6 +28,6 @@ typedef struct ASTNode {
     };
 } ASTNode;
 
-ASTNode* parser_parse(TokenArray* token_array);
+ASTNode* parser_parse(const char* file_path, TokenArray* token_array);
 void parser_free_ast(ASTNode* root);
 void parser_print_output(ASTNode* root, int indent);

@@ -13,8 +13,9 @@ int main(int argc, char** argv) {
 
     char* source = file_read(argv[1]);
 
+    // TODO: move token_array from main to parser
     TokenArray token_array = lexer_lex(source);
-    ASTNode* result = parser_parse(&token_array);
+    ASTNode* result = parser_parse(argv[1], &token_array);
 
     parser_print_output(result, 0);
 
