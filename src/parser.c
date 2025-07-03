@@ -13,17 +13,41 @@ typedef struct s_parser {
 
 static Parser parser;
 
-static int parse_expression();
-static int parse_equality();
-static int parse_comparison();
-static int parse_term();
-static int parse_factor();
-static int parse_unary();
-static int parse_primary();
+static ASTNode* make_node_binary(ASTNode* left, TokenType op, ASTNode* right) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_BINARY;
+    node->binary.left = left;
+    node->binary.op = op;
+    node->binary.right = right;
+    return node;
+}
+
+static ASTNode* make_node_unary(TokenType op, ASTNode* right) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_UNARY;
+    node->unary.op = op;
+    node->unary.right = right;
+    return node;
+}
+
+static ASTNode* make_node_literal(Word value) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_LITERAL;
+    node->literal = value;
+    return node;
+}
+
+static ASTNode* parse_expression();
+static ASTNode* parse_equality();
+static ASTNode* parse_comparison();
+static ASTNode* parse_term();
+static ASTNode* parse_factor();
+static ASTNode* parse_unary();
+static ASTNode* parse_primary();
 
 // TODO: to delete
-static int parse_line() {
-    int result = parse_expression();
+static ASTNode* parse_line() {
+    ASTNode* result = parse_expression();
     if (parser.current->type != TOKEN_SEMICOLON) {
         fprintf(stderr, "error: expected ';' after expression\n");
         exit(1);
@@ -32,113 +56,81 @@ static int parse_line() {
     return result;
 }
 
-static int parse_expression() {
+static ASTNode* parse_expression() {
     return parse_equality();
 }
 
-static int parse_equality() {
-    int left = parse_comparison();
+static ASTNode* parse_equality() {
+    ASTNode* left = parse_comparison();
 
-    TokenType operator = parser.current->type;
-    while (operator == TOKEN_EQUAL_EQUAL || operator == TOKEN_NOT_EQUAL) {
+    TokenType op = parser.current->type;
+    while (op == TOKEN_EQUAL_EQUAL || op == TOKEN_NOT_EQUAL) {
         ++parser.current;
-        int right = parse_comparison();
-        if (operator == TOKEN_EQUAL_EQUAL) {
-            left = (left == right);
-        }
-        else {
-            left = (left != right);
-        }
-        operator = parser.current->type;
+        ASTNode* right = parse_comparison();
+        left = make_node_binary(left, op, right);
+        op = parser.current->type;
     }
     return left;
 }
 
-static int parse_comparison() {
-    int left = parse_term();
+static ASTNode* parse_comparison() {
+    ASTNode* left = parse_term();
 
-    TokenType operator = parser.current->type;
-    while (operator == TOKEN_GREATER || operator == TOKEN_GREATER_EQUAL || operator == TOKEN_LESS || operator == TOKEN_LESS_EQUAL) {
+    TokenType op = parser.current->type;
+    while (op == TOKEN_GREATER || op == TOKEN_GREATER_EQUAL || op == TOKEN_LESS || op == TOKEN_LESS_EQUAL) {
         ++parser.current;
-        int right = parse_term();
-        if (operator == TOKEN_GREATER) {
-            left = (left > right);
-        }
-        else if (operator == TOKEN_GREATER_EQUAL) {
-            left = (left >= right);
-        }
-        else if (operator == TOKEN_LESS) {
-            left = (left < right);
-        }
-        else {
-            left = (left <= right);
-        }
-        operator = parser.current->type;
+        ASTNode* right = parse_term();
+        left = make_node_binary(left, op, right);
+        op = parser.current->type;
     }
     return left;
 }
 
-static int parse_term() {
-    int left = parse_factor();
+static ASTNode* parse_term() {
+    ASTNode* left = parse_factor();
 
-    TokenType operator = parser.current->type;
-    while (operator == TOKEN_PLUS || operator == TOKEN_MINUS) {
+    TokenType op = parser.current->type;
+    while (op == TOKEN_PLUS || op == TOKEN_MINUS) {
         ++parser.current;
-        int right = parse_factor();
-        if (operator == TOKEN_PLUS) {
-            left += right;
-        }
-        else {
-            left -= right;
-        }
-        operator = parser.current->type;
+        ASTNode* right = parse_factor();
+        left = make_node_binary(left, op, right);
+        op = parser.current->type;
     }
     return left;
 }
 
-static int parse_factor() {
-    int left = parse_unary();
+static ASTNode* parse_factor() {
+    ASTNode* left = parse_unary();
 
-    TokenType operator = parser.current->type;
-    while (operator == TOKEN_SLASH || operator == TOKEN_ASTERISK || operator == TOKEN_PERCENT) {
+    TokenType op = parser.current->type;
+    while (op == TOKEN_SLASH || op == TOKEN_ASTERISK || op == TOKEN_PERCENT) {
         ++parser.current;
-        int right = parse_unary();
-        if (operator == TOKEN_SLASH) {
-            left /= right;
-        }
-        else if (operator == TOKEN_ASTERISK) {
-            left *= right;
-        }
-        else {
-            left %= right;
-        }
-        operator = parser.current->type;
+        ASTNode* right = parse_unary();
+        left = make_node_binary(left, op, right);
+        op = parser.current->type;
     }
     return left;
 }
 
-static int parse_unary() {
-    TokenType operator = parser.current->type;
-    if (operator == TOKEN_MINUS || operator == TOKEN_NOT) {
+static ASTNode* parse_unary() {
+    TokenType op = parser.current->type;
+    if (op == TOKEN_MINUS || op == TOKEN_NOT) {
         ++parser.current;
-        int right = parse_primary();
-        if (operator == TOKEN_MINUS) {
-            return -right;
-        }
-        return !right;
+        ASTNode* right = parse_primary();
+        return make_node_unary(op, right);
     }
     return parse_primary();
 }
 
-static int parse_primary() {
+static ASTNode* parse_primary() {
     if (parser.current->type == TOKEN_WORD_LITERAL) {
-        int value = strtol(parser.current->value, NULL, 10);
+        Word value = strtoll(parser.current->value, NULL, 10);
         ++parser.current;
-        return value;
+        return make_node_literal(value);
     }
     if (parser.current->type == TOKEN_LEFT_PAREN) {
         ++parser.current;
-        int inside = parse_expression();
+        ASTNode* inside = parse_expression();
         if (parser.current->type != TOKEN_RIGHT_PAREN) {
             fprintf(stderr, "error: expected closing parenthesis\n");
             exit(1);
@@ -150,10 +142,71 @@ static int parse_primary() {
     exit(1);
 }
 
-int parser_parse(TokenArray* token_array) {
+ASTNode* parser_parse(TokenArray* token_array) {
     parser.tokens = token_array->tokens;
     parser.count = token_array->count;
     parser.current = parser.tokens;
 
     return parse_line();
+}
+
+void parser_free_ast(ASTNode* root) {
+    switch (root->type) {
+        case AST_NODE_BINARY: {
+            parser_free_ast(root->binary.left);
+            parser_free_ast(root->binary.right);
+        } break;
+        case AST_NODE_UNARY: {
+            parser_free_ast(root->unary.right);
+        } break;
+        case AST_NODE_LITERAL:
+        default:
+            break;
+    }
+    free (root);
+}
+
+void parser_print_output(ASTNode* root, int indent) {
+    // TODO: temporary, needed for operators
+    static const char* token_string[] = {
+        "/",
+        "*",
+        "\045",
+        "+",
+        "++",
+        "-",
+        "--",
+        "!",
+        "!=",
+        "=",
+        "==",
+        ">",
+        ">=",
+        "<",
+        "<=",
+        "&",
+        "&&",
+        "|",
+        "||",
+    };
+
+    for (int i = 0; i < indent; ++i) printf("  ");
+
+    switch (root->type) {
+        case AST_NODE_BINARY: {
+            printf("Binary: '%s'\n", token_string[root->binary.op - TOKEN_SLASH]);
+            parser_print_output(root->binary.left, indent + 1);
+            parser_print_output(root->binary.right, indent + 1);
+        } break;
+        case AST_NODE_UNARY: {
+            printf("Unary: '%s'\n", token_string[root->unary.op - TOKEN_SLASH]);
+            parser_print_output(root->unary.right, indent + 1);
+        } break;
+        case AST_NODE_LITERAL: {
+            printf("Literal: %ld\n", root->literal);
+        } break;
+        default: {
+            fprintf(stderr, "error: unknown AST node: %d\n", root->type);
+        } break;
+    }
 }
