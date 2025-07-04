@@ -4,6 +4,8 @@
 typedef int64_t Word;
 
 typedef enum ASTNodeType {
+    AST_NODE_EXPRESSION_STATEMENT,
+
     AST_NODE_BINARY,
     AST_NODE_UNARY,
     AST_NODE_LITERAL,
@@ -13,17 +15,23 @@ typedef struct ASTNode {
     ASTNodeType type;
 
     union {
+        // expression statement
+        struct ASTNode* expression;
+
+        // binary operation
         struct {
             struct ASTNode* left;
             TokenType op;
             struct ASTNode* right;
         } binary;
 
+        // unary operation
         struct {
             TokenType op;
             struct ASTNode* right;
         } unary;
 
+        // literal value
         Word literal;
     };
 } ASTNode;

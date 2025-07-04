@@ -14,6 +14,13 @@ typedef struct s_parser {
 
 static Parser parser;
 
+static ASTNode* make_node_expression_statement(ASTNode* expression) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_EXPRESSION_STATEMENT;
+    node->expression = expression;
+    return node;
+}
+
 static ASTNode* make_node_binary(ASTNode* left, TokenType op, ASTNode* right) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_BINARY;
@@ -38,6 +45,8 @@ static ASTNode* make_node_literal(Word value) {
     return node;
 }
 
+static ASTNode* parse_statement();
+
 static ASTNode* parse_expression();
 static ASTNode* parse_equality();
 static ASTNode* parse_comparison();
@@ -46,15 +55,15 @@ static ASTNode* parse_factor();
 static ASTNode* parse_unary();
 static ASTNode* parse_primary();
 
-// TODO: to delete
-static ASTNode* parse_line() {
-    ASTNode* result = parse_expression();
+static ASTNode* parse_statement() {
+    ASTNode* expression = parse_expression();
     if (parser.current->type != TOKEN_SEMICOLON) {
         fprintf(stderr, "%s:%d: error: expected ';' after expression\n", parser.file_path, parser.current->line);
         exit(1);
     }
     ++parser.current;
-    return result;
+
+    return make_node_expression_statement(expression);
 }
 
 static ASTNode* parse_expression() {
@@ -140,7 +149,7 @@ static ASTNode* parse_primary() {
         return inside;
     }
     fprintf(
-        stderr, "%s:%d: error: invalid token: %.*s\n",    
+        stderr, "%s:%d: error: invalid token: '%.*s'\n",    
         parser.file_path,
         parser.current->line,    
         parser.current->length,    
@@ -155,11 +164,14 @@ ASTNode* parser_parse(const char* file_path, TokenArray* token_array) {
     parser.count = token_array->count;
     parser.current = parser.tokens;
 
-    return parse_line();
+    return parse_statement();
 }
 
 void parser_free_ast(ASTNode* root) {
     switch (root->type) {
+        case AST_NODE_EXPRESSION_STATEMENT: {
+            parser_free_ast(root->expression);
+        } break;
         case AST_NODE_BINARY: {
             parser_free_ast(root->binary.left);
             parser_free_ast(root->binary.right);
@@ -201,6 +213,10 @@ void parser_print_output(ASTNode* root, int indent) {
     for (int i = 0; i < indent; ++i) printf("  ");
 
     switch (root->type) {
+        case AST_NODE_EXPRESSION_STATEMENT: {
+            printf("ExpressionStatement:\n");
+            parser_print_output(root->expression, indent + 1);
+        } break;
         case AST_NODE_BINARY: {
             printf("Binary: '%s'\n", token_string[root->binary.op - TOKEN_SLASH]);
             parser_print_output(root->binary.left, indent + 1);
@@ -215,6 +231,7 @@ void parser_print_output(ASTNode* root, int indent) {
         } break;
         default: {
             fprintf(stderr, "%s:%d: error: unknown AST node: %d\n", parser.file_path, parser.current->line, root->type);
+            exit(1);
         } break;
     }
 }
