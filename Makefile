@@ -1,9 +1,30 @@
-all: bbc
+CC := gcc
+CFLAGS := -Wall -Wextra -Iinclude
 
-bbc: bbc.c include/lexer.h src/lexer.c include/utils.h src/utils.c include/parser.h src/parser.c include/interpreter.h src/interpreter.c
-	gcc -Iinclude -ggdb bbc.c src/lexer.c src/parser.c src/utils.c src/interpreter.c -o bbc
+INC_DIR := include
+SRC_DIR := src
+OBJ_DIR := obj
+
+SRCS := $(wildcard $(SRC_DIR)/*.c)
+OBJS := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
+
+TARGET := bbc
+
+all: $(TARGET)
+
+$(TARGET): $(OBJ_DIR)/bbc.o $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(INC_DIR)/%.h | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/bbc.o: bbc.c | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
 
 clean:
-	rm -fr bbc
+	rm -rf $(OBJ_DIR) $(TARGET)
 
 .PHONY: all clean
