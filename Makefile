@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -Wall -Wextra -Iinclude
+CFLAGS := -Wall -Wextra -Iinclude -ggdb
 
 INC_DIR := include
 SRC_DIR := src
@@ -13,7 +13,7 @@ TARGET := bbc
 all: $(TARGET)
 
 $(TARGET): $(OBJ_DIR)/bbc.o $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) $^ -o $@
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(INC_DIR)/%.h | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
