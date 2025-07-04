@@ -24,6 +24,12 @@ Word interpreter_interpret(ASTNode* root) {
         case AST_NODE_PRINT_STATEMENT: {
             return INTERPRET_PRINT_STATEMENT(root);
         }
+        case AST_NODE_VARIABLE_DECLARATION: {
+            // TODO: not implemented
+        }
+        case AST_NODE_ASSIGNMENT: {
+            // TODO: not implemented
+        }
         case AST_NODE_BINARY: {
             switch (root->binary.op) {
                 case TOKEN_SLASH:
@@ -68,6 +74,9 @@ Word interpreter_interpret(ASTNode* root) {
         }
         case AST_NODE_LITERAL: {
             return INTERPRET_LITERAL(root); 
+        }
+        case AST_NODE_VARIABLE: {
+            // TODO: not implemented 
         }
         default: {
             fprintf(stderr, "error: unknown AST node to interpret: %d\n", root->type);

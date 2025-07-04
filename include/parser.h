@@ -7,10 +7,13 @@ typedef enum ASTNodeType {
     AST_NODE_PROGRAM,
     AST_NODE_EXPRESSION_STATEMENT,
     AST_NODE_PRINT_STATEMENT,  // TODO: TEMPORARY
+    AST_NODE_VARIABLE_DECLARATION,
 
+    AST_NODE_ASSIGNMENT,
     AST_NODE_BINARY,
     AST_NODE_UNARY,
     AST_NODE_LITERAL,
+    AST_NODE_VARIABLE,
 } ASTNodeType;
 
 typedef struct ASTNode {
@@ -24,9 +27,17 @@ typedef struct ASTNode {
             int capacity;
         } program;
 
-        // TODO: is it really needed?
         // expression
         struct ASTNode* expression;
+
+        // variable and declaration
+        char* name;
+
+        // assignment
+        struct {
+            char* name;
+            struct ASTNode* value;
+        } assignment;
 
         // binary operation
         struct {
