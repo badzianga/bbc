@@ -21,6 +21,14 @@ static ASTNode* make_node_expression_statement(ASTNode* expression) {
     return node;
 }
 
+// TODO: temporary
+static ASTNode* make_node_print_statement(ASTNode* expression) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_PRINT_STATEMENT;
+    node->expression = expression;
+    return node;
+}
+
 static ASTNode* make_node_binary(ASTNode* left, TokenType op, ASTNode* right) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_BINARY;
@@ -46,6 +54,7 @@ static ASTNode* make_node_literal(Word value) {
 }
 
 static ASTNode* parse_statement();
+static ASTNode* parse_print_statement();  // TODO: temporary
 
 static ASTNode* parse_expression();
 static ASTNode* parse_equality();
@@ -56,6 +65,12 @@ static ASTNode* parse_unary();
 static ASTNode* parse_primary();
 
 static ASTNode* parse_statement() {
+    // TODO: temporary
+    if (parser.current->type == TOKEN_GOTO) {
+        ++parser.current;
+        return parse_print_statement();
+    }
+
     ASTNode* expression = parse_expression();
     if (parser.current->type != TOKEN_SEMICOLON) {
         fprintf(stderr, "%s:%d: error: expected ';' after expression\n", parser.file_path, parser.current->line);
@@ -64,6 +79,18 @@ static ASTNode* parse_statement() {
     ++parser.current;
 
     return make_node_expression_statement(expression);
+}
+
+// TODO: temporary
+static ASTNode* parse_print_statement() {
+    ASTNode* expression = parse_expression();
+    if (parser.current->type != TOKEN_SEMICOLON) {
+        fprintf(stderr, "%s:%d: error: expected ';' after expression\n", parser.file_path, parser.current->line);
+        exit(1);
+    }
+    ++parser.current;
+
+    return make_node_print_statement(expression);
 }
 
 static ASTNode* parse_expression() {
@@ -215,6 +242,10 @@ void parser_print_output(ASTNode* root, int indent) {
     switch (root->type) {
         case AST_NODE_EXPRESSION_STATEMENT: {
             printf("ExpressionStatement:\n");
+            parser_print_output(root->expression, indent + 1);
+        } break;
+        case AST_NODE_PRINT_STATEMENT: {
+            printf("PrintStatement:\n");
             parser_print_output(root->expression, indent + 1);
         } break;
         case AST_NODE_BINARY: {

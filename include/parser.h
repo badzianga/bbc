@@ -5,6 +5,7 @@ typedef int64_t Word;
 
 typedef enum ASTNodeType {
     AST_NODE_EXPRESSION_STATEMENT,
+    AST_NODE_PRINT_STATEMENT,  // TODO: TEMPORARY
 
     AST_NODE_BINARY,
     AST_NODE_UNARY,
@@ -15,7 +16,8 @@ typedef struct ASTNode {
     ASTNodeType type;
 
     union {
-        // expression statement
+        // TODO: is it really needed?
+        // expression
         struct ASTNode* expression;
 
         // binary operation
