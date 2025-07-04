@@ -50,6 +50,7 @@ typedef enum TokenType {
     TOKEN_GOTO,            // goto
     TOKEN_WHILE,           // while
     TOKEN_RETURN,          // return
+    TOKEN_PRINT,           // print (TODO: temporary)
 
     TOKEN_ERROR
 } TokenType;

@@ -16,14 +16,14 @@ int main(int argc, char** argv) {
 
     // TODO: move token_array from main to parser
     TokenArray token_array = lexer_lex(source);
-    ASTNode* ast = parser_parse(argv[1], &token_array);
-    Word result = interpreter_interpret(ast);
-
     lexer_print_output(token_array);
     printf("----------------------------------------------------------------\n");
+    
+    ASTNode* ast = parser_parse(argv[1], &token_array);
     parser_print_output(ast, 0);
     printf("----------------------------------------------------------------\n");
-    printf("Result: %ld\n", result);
+    
+    interpreter_interpret(ast);
 
     parser_free_ast(ast);
     lexer_free_tokens(&token_array);

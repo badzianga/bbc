@@ -87,7 +87,7 @@ static ASTNode* parse_program() {
 
 static ASTNode* parse_statement() {
     // TODO: temporary
-    if (parser.current->type == TOKEN_GOTO) {
+    if (parser.current->type == TOKEN_PRINT) {
         ++parser.current;
         return parse_print_statement();
     }

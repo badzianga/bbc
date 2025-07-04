@@ -82,7 +82,7 @@ static Token lexer_read_identifier() {
         "if", "else",
         "switch", "case",
         "goto", "while",
-        "return",
+        "return", "print" // TODO: temporary
     };
     const int keywords_amount = sizeof(keywords) / sizeof(keywords[0]);
 
@@ -276,6 +276,7 @@ void lexer_print_output(TokenArray output) {
         "goto",
         "while",
         "return",
+        "print",
     
         "ERROR"
     };
