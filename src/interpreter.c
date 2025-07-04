@@ -20,6 +20,8 @@ Word interpreter_interpret(ASTNode* root) {
                     return INTERPRET_BINARY(root, /);
                 case TOKEN_ASTERISK:
                     return INTERPRET_BINARY(root, *);
+                case TOKEN_PERCENT:
+                    return INTERPRET_BINARY(root, %);
                 case TOKEN_PLUS:
                     return INTERPRET_BINARY(root, +);
                 case TOKEN_MINUS:
