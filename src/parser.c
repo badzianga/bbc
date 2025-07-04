@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "lexer.h"
+#include "utils.h"
 #include "parser.h"
 
 typedef struct s_parser {
@@ -13,6 +14,12 @@ typedef struct s_parser {
 } Parser;
 
 static Parser parser;
+
+static ASTNode* make_node_program() {
+    ASTNode* node = calloc(1, sizeof(ASTNode));
+    node->type = AST_NODE_PROGRAM;
+    return node;
+}
 
 static ASTNode* make_node_expression_statement(ASTNode* expression) {
     ASTNode* node = malloc(sizeof(ASTNode));
@@ -53,6 +60,7 @@ static ASTNode* make_node_literal(Word value) {
     return node;
 }
 
+static ASTNode* parse_program();
 static ASTNode* parse_statement();
 static ASTNode* parse_print_statement();  // TODO: temporary
 
@@ -63,6 +71,19 @@ static ASTNode* parse_term();
 static ASTNode* parse_factor();
 static ASTNode* parse_unary();
 static ASTNode* parse_primary();
+
+static ASTNode* parse_program() {
+    ASTNode* node = make_node_program();
+    while (parser.current->type != TOKEN_EOF) {
+        if (node->program.capacity < node->program.count + 1) {
+            int old_capacity = node->program.capacity;
+            node->program.capacity = GROW_CAPACITY(old_capacity);
+            node->program.statements = GROW_ARRAY(ASTNode*, node->program.statements, old_capacity, node->program.capacity);
+        }
+        node->program.statements[node->program.count++] = parse_statement();
+    }
+    return node;
+}
 
 static ASTNode* parse_statement() {
     // TODO: temporary
@@ -191,12 +212,20 @@ ASTNode* parser_parse(const char* file_path, TokenArray* token_array) {
     parser.count = token_array->count;
     parser.current = parser.tokens;
 
-    return parse_statement();
+    return parse_program();
 }
 
 void parser_free_ast(ASTNode* root) {
     switch (root->type) {
+        case AST_NODE_PROGRAM: {
+            for (int i = 0; i < root->program.count; ++i) {
+                parser_free_ast(root->program.statements[i]);
+            }
+        } break;
         case AST_NODE_EXPRESSION_STATEMENT: {
+            parser_free_ast(root->expression);
+        } break;
+        case AST_NODE_PRINT_STATEMENT: {
             parser_free_ast(root->expression);
         } break;
         case AST_NODE_BINARY: {
@@ -206,9 +235,10 @@ void parser_free_ast(ASTNode* root) {
         case AST_NODE_UNARY: {
             parser_free_ast(root->unary.right);
         } break;
-        case AST_NODE_LITERAL:
-        default:
-            break;
+        case AST_NODE_LITERAL: break;
+        default: {
+            fprintf(stderr, "error: unknown AST node to free: %d\n", root->type);
+        } break;
     }
     free (root);
 }
@@ -240,6 +270,12 @@ void parser_print_output(ASTNode* root, int indent) {
     for (int i = 0; i < indent; ++i) printf("  ");
 
     switch (root->type) {
+        case AST_NODE_PROGRAM: {
+            printf("Program:\n");
+            for (int i = 0; i < root->program.count; ++i) {
+                parser_print_output(root->program.statements[i], indent + 1);                
+            }
+        } break;
         case AST_NODE_EXPRESSION_STATEMENT: {
             printf("ExpressionStatement:\n");
             parser_print_output(root->expression, indent + 1);

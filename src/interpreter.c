@@ -12,6 +12,12 @@
 
 Word interpreter_interpret(ASTNode* root) {
     switch (root->type) {
+        case AST_NODE_PROGRAM: {
+            for (int i = 0; i < root->program.count; ++i) {
+                interpreter_interpret(root->program.statements[i]);
+            }
+            return 0;
+        }
         case AST_NODE_EXPRESSION_STATEMENT: {
             return INTERPRET_EXPRESSION_STATEMENT(root);
         }

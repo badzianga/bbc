@@ -4,6 +4,7 @@
 typedef int64_t Word;
 
 typedef enum ASTNodeType {
+    AST_NODE_PROGRAM,
     AST_NODE_EXPRESSION_STATEMENT,
     AST_NODE_PRINT_STATEMENT,  // TODO: TEMPORARY
 
@@ -16,6 +17,13 @@ typedef struct ASTNode {
     ASTNodeType type;
 
     union {
+        // program
+        struct {
+            struct ASTNode** statements;
+            int count;
+            int capacity;
+        } program;
+
         // TODO: is it really needed?
         // expression
         struct ASTNode* expression;
