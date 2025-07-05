@@ -28,3 +28,14 @@ clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
 
 .PHONY: all clean
+
+
+
+test: test.o
+	gcc -no-pie test.o -o test
+
+test.o: test.asm
+	fasm test.asm
+
+test.asm: $(TARGET) examples/compilable.b
+	./$(TARGET) examples/compilable.b
