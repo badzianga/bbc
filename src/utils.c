@@ -16,7 +16,7 @@ void* reallocate(void* pointer, int new_size) {
 char* file_read(const char* filename) {
     FILE* file = fopen(filename, "rb");
     if (file == NULL) {
-        fprintf(stderr, "Failed to open file: %s\n", filename);
+        fprintf(stderr, "error: failed to open file: %s\n", filename);
         exit(1);
     }
 
@@ -26,7 +26,7 @@ char* file_read(const char* filename) {
 
     char* content = (char*)malloc(sizeof(char) * length + 1);
     if (content == NULL) {
-        fprintf(stderr, "Failed to allocate memory for file\n");
+        fprintf(stderr, "error: failed to allocate memory for file: %s\n", filename);
         exit(1);
     }
 
