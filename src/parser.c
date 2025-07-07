@@ -29,14 +29,6 @@ static ASTNode* make_node_expression_statement(ASTNode* expression) {
     return node;
 }
 
-// TODO: temporary
-static ASTNode* make_node_print_statement(ASTNode* expression) {
-    ASTNode* node = malloc(sizeof(ASTNode));
-    node->type = AST_NODE_PRINT_STATEMENT;
-    node->expression = expression;
-    return node;
-}
-
 static ASTNode* make_node_variable_declaration(char* name) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_VARIABLE_DECLARATION;
@@ -86,7 +78,6 @@ static ASTNode* make_node_variable(char* name) {
 static ASTNode* parse_program();
 static ASTNode* parse_declaration();
 static ASTNode* parse_statement();
-static ASTNode* parse_print_statement();  // TODO: temporary
 
 static ASTNode* parse_expression();
 static ASTNode* parse_assignment();
@@ -132,12 +123,6 @@ static ASTNode* parse_declaration() {
 }
 
 static ASTNode* parse_statement() {
-    // TODO: temporary
-    if (parser.current->type == TOKEN_PRINT) {
-        ++parser.current;
-        return parse_print_statement();
-    }
-
     ASTNode* expression = parse_expression();
     if (parser.current->type != TOKEN_SEMICOLON) {
         fprintf(stderr, "%s:%d: error: expected ';' after expression\n", parser.file_path, parser.current->line);
@@ -146,18 +131,6 @@ static ASTNode* parse_statement() {
     ++parser.current;
 
     return make_node_expression_statement(expression);
-}
-
-// TODO: temporary
-static ASTNode* parse_print_statement() {
-    ASTNode* expression = parse_expression();
-    if (parser.current->type != TOKEN_SEMICOLON) {
-        fprintf(stderr, "%s:%d: error: expected ';' after expression\n", parser.file_path, parser.current->line);
-        exit(1);
-    }
-    ++parser.current;
-
-    return make_node_print_statement(expression);
 }
 
 static ASTNode* parse_expression() {
@@ -298,9 +271,6 @@ void parser_free_ast(ASTNode* root) {
         case AST_NODE_EXPRESSION_STATEMENT: {
             parser_free_ast(root->expression);
         } break;
-        case AST_NODE_PRINT_STATEMENT: {
-            parser_free_ast(root->expression);
-        } break;
         case AST_NODE_VARIABLE_DECLARATION: {
             free(root->name);
         } break;
@@ -361,10 +331,6 @@ void parser_print_output(ASTNode* root, int indent) {
         } break;
         case AST_NODE_EXPRESSION_STATEMENT: {
             printf("ExpressionStatement:\n");
-            parser_print_output(root->expression, indent + 1);
-        } break;
-        case AST_NODE_PRINT_STATEMENT: {
-            printf("PrintStatement:\n");
             parser_print_output(root->expression, indent + 1);
         } break;
         case AST_NODE_VARIABLE_DECLARATION: {

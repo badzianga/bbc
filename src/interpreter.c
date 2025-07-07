@@ -5,7 +5,6 @@
 #include "parser.h"
 
 #define INTERPRET_EXPRESSION_STATEMENT(node) interpreter_interpret((node)->expression)
-#define INTERPRET_PRINT_STATEMENT(node) printf("Printed: %ld\n", interpreter_interpret((node)->expression))
 #define INTERPRET_BINARY(node, op) interpreter_interpret((node)->binary.left) op interpreter_interpret((node)->binary.right)
 #define INTERPRET_UNARY(node, op) op interpreter_interpret((node)->unary.right)
 #define INTERPRET_LITERAL(node) (node)->literal
@@ -20,9 +19,6 @@ Word interpreter_interpret(ASTNode* root) {
         }
         case AST_NODE_EXPRESSION_STATEMENT: {
             return INTERPRET_EXPRESSION_STATEMENT(root);
-        }
-        case AST_NODE_PRINT_STATEMENT: {
-            return INTERPRET_PRINT_STATEMENT(root);
         }
         case AST_NODE_VARIABLE_DECLARATION: {
             // TODO: not implemented
