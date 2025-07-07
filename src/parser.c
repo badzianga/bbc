@@ -36,6 +36,12 @@ static ASTNode* make_node_variable_declaration(char* name) {
     return node;
 }
 
+static ASTNode* make_node_block() {
+    ASTNode* node = calloc(1, sizeof(ASTNode));
+    node->type = AST_NODE_BLOCK;
+    return node;
+}
+
 // static ASTNode* make_node_assignment(char* name, ASTNode* value) {
 //     ASTNode* node = malloc(sizeof(ASTNode));
 //     node->type = AST_NODE_ASSIGNMENT;
@@ -78,6 +84,7 @@ static ASTNode* make_node_variable(char* name) {
 static ASTNode* parse_program();
 static ASTNode* parse_declaration();
 static ASTNode* parse_statement();
+static ASTNode* parse_block();
 
 static ASTNode* parse_expression();
 static ASTNode* parse_assignment();
@@ -123,6 +130,17 @@ static ASTNode* parse_declaration() {
 }
 
 static ASTNode* parse_statement() {
+    if (parser.current->type == TOKEN_LEFT_BRACE) {
+        ++parser.current;
+        ASTNode* node = parse_block();
+        if (parser.current->type != TOKEN_RIGHT_BRACE) {
+            fprintf(stderr, "%s:%d: error: expected '}' after block\n", parser.file_path, parser.current->line);
+            exit(1);
+        }
+        ++parser.current;
+        return node;
+    }
+
     ASTNode* expression = parse_expression();
     if (parser.current->type != TOKEN_SEMICOLON) {
         fprintf(stderr, "%s:%d: error: expected ';' after expression\n", parser.file_path, parser.current->line);
@@ -131,6 +149,19 @@ static ASTNode* parse_statement() {
     ++parser.current;
 
     return make_node_expression_statement(expression);
+}
+
+static ASTNode* parse_block() {
+    ASTNode* node = make_node_block();
+    while (parser.current->type != TOKEN_RIGHT_BRACE && parser.current->type != TOKEN_EOF) {
+        if (node->block.capacity < node->block.count + 1) {
+            int old_capacity = node->block.capacity;
+            node->block.capacity = GROW_CAPACITY(old_capacity);
+            node->block.statements = GROW_ARRAY(ASTNode*, node->block.statements, old_capacity, node->block.capacity);
+        }
+        node->block.statements[node->block.count++] = parse_declaration();
+    }
+    return node;
 }
 
 static ASTNode* parse_expression() {
@@ -267,6 +298,13 @@ void parser_free_ast(ASTNode* root) {
             for (int i = 0; i < root->program.count; ++i) {
                 parser_free_ast(root->program.statements[i]);
             }
+            free(root->program.statements);
+        } break;
+        case AST_NODE_BLOCK: {
+            for (int i = 0; i < root->block.count; ++i) {
+                parser_free_ast(root->block.statements[i]);
+            }
+            free(root->block.statements);
         } break;
         case AST_NODE_EXPRESSION_STATEMENT: {
             parser_free_ast(root->expression);
@@ -304,6 +342,12 @@ void parser_print_output(ASTNode* root, int indent) {
             printf("Program:\n");
             for (int i = 0; i < root->program.count; ++i) {
                 parser_print_output(root->program.statements[i], indent + 1);                
+            }
+        } break;
+        case AST_NODE_BLOCK: {
+            printf("Block:\n");
+            for (int i = 0; i < root->block.count; ++i) {
+                parser_print_output(root->block.statements[i], indent + 1);                
             }
         } break;
         case AST_NODE_EXPRESSION_STATEMENT: {

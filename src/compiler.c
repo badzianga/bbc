@@ -27,6 +27,11 @@ static AutoVar* find_auto_var(const char* name) {
 
 static void compile(ASTNode* root, FILE* file) {
     switch (root->type) {
+        case AST_NODE_BLOCK: {
+            for (int i = 0; i < root->block.count; ++i) {
+                compile(root->block.statements[i], file);
+            }
+        } break;
         case AST_NODE_EXPRESSION_STATEMENT: {
             compile(root->expression, file);
         } break;
@@ -156,7 +161,10 @@ static void compile(ASTNode* root, FILE* file) {
             fprintf(file, "\tmov rax, [rbp-%zu]\n", var->offset);
             fprintf(file, "\tpush rax\n"); ++pushed_on_stack;
         } break;
-        default: break;
+        default: {
+            fprintf(stderr, "Unknow AST node: %d\n", root->type);
+            exit(1);
+        };
     }
 }
 

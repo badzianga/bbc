@@ -5,6 +5,7 @@ typedef int64_t Word;
 
 typedef enum ASTNodeType {
     AST_NODE_PROGRAM,
+    AST_NODE_BLOCK,
     AST_NODE_EXPRESSION_STATEMENT,
     AST_NODE_VARIABLE_DECLARATION,
 
@@ -31,6 +32,13 @@ typedef struct ASTNode {
 
         // variable and declaration
         char* name;
+
+        // block (TODO: same struct as program, maybe can be logically joined?)
+        struct {
+            struct ASTNode** statements;
+            int count;
+            int capacity;
+        } block;
 
         // assignment
         struct {
