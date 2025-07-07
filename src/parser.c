@@ -297,29 +297,6 @@ void parser_free_ast(ASTNode* root) {
 }
 
 void parser_print_output(ASTNode* root, int indent) {
-    // TODO: temporary, needed for operators
-    static const char* token_string[] = {
-        "/",
-        "*",
-        "\045",
-        "+",
-        "++",
-        "-",
-        "--",
-        "!",
-        "!=",
-        "=",
-        "==",
-        ">",
-        ">=",
-        "<",
-        "<=",
-        "&",
-        "&&",
-        "|",
-        "||",
-    };
-
     for (int i = 0; i < indent; ++i) printf("  ");
 
     switch (root->type) {
@@ -341,12 +318,12 @@ void parser_print_output(ASTNode* root, int indent) {
             parser_print_output(root->assignment.value, indent + 1);
         } break;
         case AST_NODE_BINARY: {
-            printf("Binary: '%s'\n", token_string[root->binary.op - TOKEN_SLASH]);
+            printf("Binary: '%s'\n", token_as_cstr(root->binary.op));
             parser_print_output(root->binary.left, indent + 1);
             parser_print_output(root->binary.right, indent + 1);
         } break;
         case AST_NODE_UNARY: {
-            printf("Unary: '%s'\n", token_string[root->unary.op - TOKEN_SLASH]);
+            printf("Unary: '%s'\n", token_as_cstr(root->unary.op));
             parser_print_output(root->unary.right, indent + 1);
         } break;
         case AST_NODE_LITERAL: {

@@ -71,3 +71,4 @@ typedef struct TokenArray {
 TokenArray lexer_lex(const char* source);
 void lexer_free_tokens(TokenArray* token_array);
 void lexer_print_output(TokenArray token_array);
+const char* token_as_cstr(TokenType type);

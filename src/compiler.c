@@ -107,7 +107,11 @@ static void compile(ASTNode* root, FILE* file) {
                     // TODO: not implemented
                 } break;
                 default: {
-                    fprintf(stderr, "error: invalid operator in binary operation: %d\n", root->binary.op);
+                    fprintf(
+                        stderr,
+                        "error: invalid operator in binary operation: %s\n",
+                        token_as_cstr(root->binary.op)
+                    );
                     exit(1);
                 } break;
             }
@@ -127,7 +131,11 @@ static void compile(ASTNode* root, FILE* file) {
                     // TODO: not implemented
                 } break;
                 default: {
-                    fprintf(stderr, "error: invalid operator in unary operation: %d\n", root->unary.op);
+                    fprintf(
+                        stderr,
+                        "error: invalid operator in unary operation: %s\n",
+                        token_as_cstr(root->unary.op)
+                    );
                     exit(1);
                 }
             }

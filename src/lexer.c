@@ -228,7 +228,30 @@ void lexer_free_tokens(TokenArray *token_array) {
 }
 
 void lexer_print_output(TokenArray output) {
-    static const char* token_string[] = {
+    for (int i = 0; i < output.count; ++i) {
+        const Token* token = &output.tokens[i];
+
+        TokenType type = token->type;
+
+        if (type == TOKEN_IDENTIFIER || type == TOKEN_WORD_LITERAL || type == TOKEN_STRING_LITERAL) {
+            printf(
+                "Line: %d,\ttoken: %s,\tvalue: %.*s\n",
+                token->line,
+                token_as_cstr(type),
+                token->length,
+                token->value
+            );
+        }
+        else {
+            printf("Line: %d,\ttoken: %s\n", token->line, token_as_cstr(type));
+        }
+
+        if (type == TOKEN_EOF) break;
+    }
+}
+
+const char* token_as_cstr(TokenType type) {
+    static const char* token_strings[] = {
         "EOF",
     
         "(",
@@ -281,24 +304,5 @@ void lexer_print_output(TokenArray output) {
         "ERROR"
     };
 
-    for (int i = 0; i < output.count; ++i) {
-        const Token* token = &output.tokens[i];
-
-        TokenType type = token->type;
-
-        if (type == TOKEN_IDENTIFIER || type == TOKEN_WORD_LITERAL || type == TOKEN_STRING_LITERAL) {
-            printf(
-                "Line: %d,\ttoken: %s,\tvalue: %.*s\n",
-                token->line,
-                token_string[type],
-                token->length,
-                token->value
-            );
-        }
-        else {
-            printf("Line: %d,\ttoken: %s\n", token->line, token_string[type]);
-        }
-
-        if (type == TOKEN_EOF) break;
-    }
+    return token_strings[type];
 }
