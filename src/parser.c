@@ -16,6 +16,14 @@ typedef struct s_parser {
 
 static Parser parser;
 
+static void consume_expected(TokenType token, const char* error_if_fail) {
+    if (parser.current->type != token) {
+        fprintf(stderr, "%s:%d: error: %s\n", parser.file_path, parser.current->line, error_if_fail);
+        exit(1);
+    }
+    ++parser.current;
+}
+
 static ASTNode* make_node_program() {
     ASTNode* node = calloc(1, sizeof(ASTNode));
     node->type = AST_NODE_PROGRAM;
@@ -115,14 +123,9 @@ static ASTNode* parse_declaration() {
             fprintf(stderr, "%s:%d: error: expected identifier name after `auto`\n", parser.file_path, parser.current->line);
             exit(1);
         }
-        // TODO: free this memory
         char* name = strndup(parser.current->value, parser.current->length);
         ++parser.current;
-        if (parser.current->type != TOKEN_SEMICOLON) {
-            fprintf(stderr, "%s:%d: error: expected ';' after expression\n", parser.file_path, parser.current->line);
-            exit(1);
-        }
-        ++parser.current;
+        consume_expected(TOKEN_SEMICOLON, "expected ';' after expression");
         return make_node_variable_declaration(name);
     }
 
@@ -133,21 +136,12 @@ static ASTNode* parse_statement() {
     if (parser.current->type == TOKEN_LEFT_BRACE) {
         ++parser.current;
         ASTNode* node = parse_block();
-        if (parser.current->type != TOKEN_RIGHT_BRACE) {
-            fprintf(stderr, "%s:%d: error: expected '}' after block\n", parser.file_path, parser.current->line);
-            exit(1);
-        }
-        ++parser.current;
+        consume_expected(TOKEN_RIGHT_BRACE, "expected '}' after block");
         return node;
     }
 
     ASTNode* expression = parse_expression();
-    if (parser.current->type != TOKEN_SEMICOLON) {
-        fprintf(stderr, "%s:%d: error: expected ';' after expression\n", parser.file_path, parser.current->line);
-        exit(1);
-    }
-    ++parser.current;
-
+    consume_expected(TOKEN_SEMICOLON, "expected ';' after expression");
     return make_node_expression_statement(expression);
 }
 
@@ -169,7 +163,6 @@ static ASTNode* parse_expression() {
 }
 
 static ASTNode* parse_assignment() {
-    // TODO: should it really be parsed like this?
     ASTNode* expression = parse_equality();
 
     if (parser.current->type == TOKEN_EQUAL) {
@@ -261,11 +254,7 @@ static ASTNode* parse_primary() {
     if (parser.current->type == TOKEN_LEFT_PAREN) {
         ++parser.current;
         ASTNode* inside = parse_expression();
-        if (parser.current->type != TOKEN_RIGHT_PAREN) {
-            fprintf(stderr, "%s:%d: error: expected closing parenthesis\n", parser.file_path, parser.current->line);
-            exit(1);
-        }
-        ++parser.current;
+        consume_expected(TOKEN_RIGHT_PAREN, "expected closing parenthesis");
         return inside;
     }
     if (parser.current->type == TOKEN_IDENTIFIER) {
