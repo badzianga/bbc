@@ -64,7 +64,9 @@ static void compile(ASTNode* root, FILE* file) {
             fprintf(file, "\tpop rax\n"); --pushed_on_stack;
             switch (root->binary.op) {
                 case TOKEN_SLASH: {
-                    // TODO: not implemented
+                    fprintf(file, "\t;---div---\n");
+                    fprintf(file, "\tidiv rbx\n");
+                    fprintf(file, "\tpush rax\n"); ++pushed_on_stack;
                 } break;
                 case TOKEN_ASTERISK: {
                     fprintf(file, "\t;---mul---\n");
@@ -72,7 +74,9 @@ static void compile(ASTNode* root, FILE* file) {
                     fprintf(file, "\tpush rax\n"); ++pushed_on_stack;
                 } break;
                 case TOKEN_PERCENT: {
-                    // TODO: not implemented
+                    fprintf(file, "\t;---mod---\n");
+                    fprintf(file, "\tidiv rbx\n");
+                    fprintf(file, "\tpush rdx\n"); ++pushed_on_stack;
                 } break;
                 case TOKEN_PLUS: {
                     fprintf(file, "\t;---add---\n");
