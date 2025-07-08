@@ -7,6 +7,7 @@ typedef enum ASTNodeType {
     AST_NODE_PROGRAM,
     AST_NODE_BLOCK,
     AST_NODE_EXPRESSION_STATEMENT,
+    AST_NODE_IF_STATEMENT,
     AST_NODE_VARIABLE_DECLARATION,
 
     AST_NODE_ASSIGNMENT,
@@ -29,6 +30,12 @@ typedef struct ASTNode {
 
         // expression
         struct ASTNode* expression;
+
+        struct {
+            struct ASTNode* condition;
+            struct ASTNode* then_branch;
+            struct ASTNode* else_branch;
+        } if_statement;
 
         // variable and declaration
         char* name;

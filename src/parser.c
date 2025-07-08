@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "lexer.h"
-#include "utils.h"
 #include "parser.h"
+#include "utils.h"
 
-typedef struct s_parser {
+typedef struct Parser {
     const char* file_path;
     Token* tokens;
     Token* current;
@@ -53,6 +53,15 @@ static ASTNode* make_node_expression_statement(ASTNode* expression) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_EXPRESSION_STATEMENT;
     node->expression = expression;
+    return node;
+}
+
+static ASTNode* make_node_if_statement(ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_IF_STATEMENT;
+    node->if_statement.condition = condition;
+    node->if_statement.then_branch = then_branch;
+    node->if_statement.else_branch = else_branch;
     return node;
 }
 
@@ -147,6 +156,20 @@ static ASTNode* parse_declaration() {
 }
 
 static ASTNode* parse_statement() {
+    if (match(1, TOKEN_IF)) {
+        consume_expected(TOKEN_LEFT_PAREN, "expected '(' after 'if'");
+        ASTNode* condition = parse_expression();
+        consume_expected(TOKEN_RIGHT_PAREN, "expected ')' after 'if' condition");
+
+        ASTNode* then_branch = parse_statement();
+        ASTNode* else_branch = NULL;
+        if (match(1, TOKEN_ELSE)) {
+            else_branch = parse_statement();
+        }
+
+        return make_node_if_statement(condition, then_branch, else_branch);
+    }
+
     if (match(1, TOKEN_LEFT_BRACE)) {
         ASTNode* node = parse_block();
         consume_expected(TOKEN_RIGHT_BRACE, "expected '}' after block");
@@ -298,6 +321,13 @@ void parser_free_ast(ASTNode* root) {
         case AST_NODE_EXPRESSION_STATEMENT: {
             parser_free_ast(root->expression);
         } break;
+        case AST_NODE_IF_STATEMENT : {
+            parser_free_ast(root->if_statement.condition);
+            parser_free_ast(root->if_statement.then_branch);
+            if (root->if_statement.else_branch != NULL) {
+                parser_free_ast(root->if_statement.else_branch);
+            }
+        } break;
         case AST_NODE_VARIABLE_DECLARATION: {
             free(root->name);
         } break;
@@ -340,23 +370,35 @@ void parser_print_output(ASTNode* root, int indent) {
             }
         } break;
         case AST_NODE_EXPRESSION_STATEMENT: {
-            printf("ExpressionStatement:\n");
+            printf("ExprStmt:\n");
             parser_print_output(root->expression, indent + 1);
         } break;
+        case AST_NODE_IF_STATEMENT: {
+            printf("If:\n");
+            parser_print_output(root->if_statement.condition, indent + 1);
+            for (int i = 0; i < indent; ++i) printf("  ");
+            printf("Then:\n");
+            parser_print_output(root->if_statement.then_branch, indent + 1);
+            if (root->if_statement.else_branch != NULL) {
+                for (int i = 0; i < indent; ++i) printf("  ");
+                printf("Else:\n");
+                parser_print_output(root->if_statement.else_branch, indent + 1);
+            }
+        } break;
         case AST_NODE_VARIABLE_DECLARATION: {
-            printf("VariableDeclaration: %s\n", root->name);
+            printf("VarDecl: %s\n", root->name);
         } break;
         case AST_NODE_ASSIGNMENT: {
             printf("Assignment: %s\n", root->assignment.name);
             parser_print_output(root->assignment.value, indent + 1);
         } break;
         case AST_NODE_BINARY: {
-            printf("Binary: '%s'\n", token_as_cstr(root->binary.op));
+            printf("Binary: %s\n", token_as_cstr(root->binary.op));
             parser_print_output(root->binary.left, indent + 1);
             parser_print_output(root->binary.right, indent + 1);
         } break;
         case AST_NODE_UNARY: {
-            printf("Unary: '%s'\n", token_as_cstr(root->unary.op));
+            printf("Unary: %s\n", token_as_cstr(root->unary.op));
             parser_print_output(root->unary.right, indent + 1);
         } break;
         case AST_NODE_LITERAL: {
