@@ -65,6 +65,14 @@ static ASTNode* make_node_if_statement(ASTNode* condition, ASTNode* then_branch,
     return node;
 }
 
+static ASTNode* make_node_while_statement(ASTNode* condition, ASTNode* body) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_WHILE_STATEMENT;
+    node->while_statement.condition = condition;
+    node->while_statement.body = body;
+    return node;
+}
+
 static ASTNode* make_node_variable_declaration(char* name) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_VARIABLE_DECLARATION;
@@ -168,6 +176,16 @@ static ASTNode* parse_statement() {
         }
 
         return make_node_if_statement(condition, then_branch, else_branch);
+    }
+
+    if (match(1, TOKEN_WHILE)) {
+        consume_expected(TOKEN_LEFT_PAREN, "expected '(' after 'while'");
+        ASTNode* condition = parse_expression();
+        consume_expected(TOKEN_RIGHT_PAREN, "expected ')' after 'while' condition");
+
+        ASTNode* body = parse_statement();
+
+        return make_node_while_statement(condition, body);
     }
 
     if (match(1, TOKEN_LEFT_BRACE)) {
@@ -328,6 +346,10 @@ void parser_free_ast(ASTNode* root) {
                 parser_free_ast(root->if_statement.else_branch);
             }
         } break;
+        case AST_NODE_WHILE_STATEMENT: {
+            parser_free_ast(root->while_statement.condition);
+            parser_free_ast(root->while_statement.body);
+        } break;
         case AST_NODE_VARIABLE_DECLARATION: {
             free(root->name);
         } break;
@@ -384,6 +406,13 @@ void parser_print_output(ASTNode* root, int indent) {
                 printf("Else:\n");
                 parser_print_output(root->if_statement.else_branch, indent + 1);
             }
+        } break;
+        case AST_NODE_WHILE_STATEMENT: {
+            printf("While:\n");
+            parser_print_output(root->while_statement.condition, indent + 1);
+            for (int i = 0; i < indent; ++i) printf("  ");
+            printf("Then:\n");
+            parser_print_output(root->while_statement.body, indent + 1);
         } break;
         case AST_NODE_VARIABLE_DECLARATION: {
             printf("VarDecl: %s\n", root->name);
