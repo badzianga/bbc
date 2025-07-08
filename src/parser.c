@@ -24,6 +24,25 @@ static void consume_expected(TokenType token, const char* error_if_fail) {
     ++parser.current;
 }
 
+static bool match(int argc, ...) {
+    TokenType token = parser.current->type;
+    va_list argv;
+    va_start(argv, argc);
+    for (int i = 0; i < argc; ++i) {
+        if (token == va_arg(argv, TokenType)) {
+            va_end(argv);
+            ++parser.current;
+            return true;
+        }
+    }
+    va_end(argv);
+    return false;
+}
+
+inline static Token* previous() {
+    return parser.current - 1;
+}
+
 static ASTNode* make_node_program() {
     ASTNode* node = calloc(1, sizeof(ASTNode));
     node->type = AST_NODE_PROGRAM;
@@ -117,14 +136,9 @@ static ASTNode* parse_program() {
 }
 
 static ASTNode* parse_declaration() {
-    if (parser.current->type == TOKEN_AUTO) {
-        ++parser.current;
-        if (parser.current->type != TOKEN_IDENTIFIER) {
-            fprintf(stderr, "%s:%d: error: expected identifier name after `auto`\n", parser.file_path, parser.current->line);
-            exit(1);
-        }
-        char* name = strndup(parser.current->value, parser.current->length);
-        ++parser.current;
+    if (match(1, TOKEN_AUTO)) {
+        consume_expected(TOKEN_IDENTIFIER, "expected identifier name after 'auto'\n");
+        char* name = strndup(previous()->value, previous()->length);
         consume_expected(TOKEN_SEMICOLON, "expected ';' after expression");
         return make_node_variable_declaration(name);
     }
@@ -133,8 +147,7 @@ static ASTNode* parse_declaration() {
 }
 
 static ASTNode* parse_statement() {
-    if (parser.current->type == TOKEN_LEFT_BRACE) {
-        ++parser.current;
+    if (match(1, TOKEN_LEFT_BRACE)) {
         ASTNode* node = parse_block();
         consume_expected(TOKEN_RIGHT_BRACE, "expected '}' after block");
         return node;
@@ -165,8 +178,7 @@ static ASTNode* parse_expression() {
 static ASTNode* parse_assignment() {
     ASTNode* expression = parse_equality();
 
-    if (parser.current->type == TOKEN_EQUAL) {
-        ++parser.current;
+    if (match(1, TOKEN_EQUAL)) {
         ASTNode* value = parse_assignment();
 
         if (expression->type == AST_NODE_VARIABLE) {
@@ -186,12 +198,10 @@ static ASTNode* parse_assignment() {
 static ASTNode* parse_equality() {
     ASTNode* left = parse_comparison();
 
-    TokenType op = parser.current->type;
-    while (op == TOKEN_EQUAL_EQUAL || op == TOKEN_NOT_EQUAL) {
-        ++parser.current;
+    while (match(2, TOKEN_EQUAL_EQUAL, TOKEN_NOT_EQUAL)) {
+        TokenType op = previous()->type;
         ASTNode* right = parse_comparison();
         left = make_node_binary(left, op, right);
-        op = parser.current->type;
     }
     return left;
 }
@@ -199,12 +209,10 @@ static ASTNode* parse_equality() {
 static ASTNode* parse_comparison() {
     ASTNode* left = parse_term();
 
-    TokenType op = parser.current->type;
-    while (op == TOKEN_GREATER || op == TOKEN_GREATER_EQUAL || op == TOKEN_LESS || op == TOKEN_LESS_EQUAL) {
-        ++parser.current;
+    while (match(4, TOKEN_GREATER, TOKEN_GREATER_EQUAL, TOKEN_LESS, TOKEN_LESS_EQUAL)) {
+        TokenType op = previous()->type;
         ASTNode* right = parse_term();
         left = make_node_binary(left, op, right);
-        op = parser.current->type;
     }
     return left;
 }
@@ -212,12 +220,10 @@ static ASTNode* parse_comparison() {
 static ASTNode* parse_term() {
     ASTNode* left = parse_factor();
 
-    TokenType op = parser.current->type;
-    while (op == TOKEN_PLUS || op == TOKEN_MINUS) {
-        ++parser.current;
+    while (match(2, TOKEN_PLUS, TOKEN_MINUS)) {
+        TokenType op = previous()->type;
         ASTNode* right = parse_factor();
         left = make_node_binary(left, op, right);
-        op = parser.current->type;
     }
     return left;
 }
@@ -225,20 +231,17 @@ static ASTNode* parse_term() {
 static ASTNode* parse_factor() {
     ASTNode* left = parse_unary();
 
-    TokenType op = parser.current->type;
-    while (op == TOKEN_SLASH || op == TOKEN_ASTERISK || op == TOKEN_PERCENT) {
-        ++parser.current;
+    while (match(3, TOKEN_SLASH, TOKEN_ASTERISK, TOKEN_PERCENT)) {
+        TokenType op = previous()->type;
         ASTNode* right = parse_unary();
         left = make_node_binary(left, op, right);
-        op = parser.current->type;
     }
     return left;
 }
 
 static ASTNode* parse_unary() {
-    TokenType op = parser.current->type;
-    if (op == TOKEN_MINUS || op == TOKEN_NOT) {
-        ++parser.current;
+    if (match(2, TOKEN_MINUS, TOKEN_NOT)) {
+        TokenType op = previous()->type;
         ASTNode* right = parse_primary();
         return make_node_unary(op, right);
     }
@@ -246,20 +249,17 @@ static ASTNode* parse_unary() {
 }
 
 static ASTNode* parse_primary() {
-    if (parser.current->type == TOKEN_WORD_LITERAL) {
-        Word value = strtoll(parser.current->value, NULL, 10);
-        ++parser.current;
+    if (match(1, TOKEN_WORD_LITERAL)) {
+        Word value = strtoll(previous()->value, NULL, 10);
         return make_node_literal(value);
     }
-    if (parser.current->type == TOKEN_LEFT_PAREN) {
-        ++parser.current;
+    if (match(1, TOKEN_LEFT_PAREN)) {
         ASTNode* inside = parse_expression();
         consume_expected(TOKEN_RIGHT_PAREN, "expected closing parenthesis");
         return inside;
     }
-    if (parser.current->type == TOKEN_IDENTIFIER) {
-        char* name = strndup(parser.current->value, parser.current->length);
-        ++parser.current;
+    if (match(1, TOKEN_IDENTIFIER)) {
+        char* name = strndup(previous()->value, previous()->length);
         return make_node_variable(name);
     }
     fprintf(
